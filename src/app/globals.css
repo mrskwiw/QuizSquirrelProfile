@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Improve text contrast for better readability on mobile */
+input,
+textarea,
+select {
+  color: rgb(17 24 39) !important; /* gray-900 */
+  font-weight: 500;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgb(107 114 128) !important; /* gray-500 */
+}
+
+/* Ensure links and usernames have good contrast */
+a,
+.username,
+.user-display-name {
+  color: rgb(17 24 39); /* gray-900 */
+}
+
+a:hover {
+  color: rgb(37 99 235); /* blue-600 */
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

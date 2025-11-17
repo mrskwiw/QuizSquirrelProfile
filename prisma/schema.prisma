@@ -1,0 +1,567 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String            @id @default(uuid())
+  email               String            @unique
+  username            String            @unique
+  displayName         String
+  password            String
+  avatarUrl           String?
+  bio                 String?
+  role                UserRole          @default(USER)
+  isBlocked           Boolean           @default(false)
+  blockedReason       String?
+  blockedAt           DateTime?
+  blockedBy           String?
+  subscriptionTier    SubscriptionTier  @default(FREE)
+  subscriptionId      String?
+  subscriptionEnds    DateTime?
+  isVerified          Boolean           @default(false)
+  storageUsed         Int               @default(0)
+  quizzesCreatedToday Int               @default(0)
+  lastQuizCreatedAt   DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  instagramHandle     String?
+  interests           String[]          @default([])
+  location            String?
+  pronouns            String?
+  tiktokHandle        String?
+  tumblrHandle        String?
+  twitterHandle       String?
+  website             String?
+  facebookHandle      String?
+  auditLogs           AuditLog[]        @relation("AuditLogs")
+  blockedEmails       BlockedEmail[]    @relation("BlockedEmailsCreated")
+  comments            Comment[]
+  commentLikes        CommentLike[]
+  communities         Community[]
+  communityMembers    CommunityMember[]
+  followers           Follow[]          @relation("Followers")
+  following           Follow[]          @relation("Following")
+  notifications       Notification[]
+  quizzes             Quiz[]
+  quizLikes              QuizLike[]                 @relation("QuizLikes")
+  ratings                QuizRating[]
+  responses              QuizResponse[]
+  conversationParticipants ConversationParticipant[]
+  sentMessages           Message[]                  @relation("SentMessages")
+  messageReactions       MessageReaction[]
+  messageReads           MessageRead[]
+  reportedMessages       MessageReport[]
+  blockedUsers           UserBlock[]                @relation("BlockedUsers")
+  blockedByUsers         UserBlock[]                @relation("BlockedByUsers")
+  socialMediaConnections SocialMediaConnection[]
+
+  @@index([email])
+  @@index([username])
+  @@index([displayName])
+  @@index([createdAt])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model UserBlock {
+  id         String   @id @default(uuid())
+  blockerId  String
+  blockedId  String
+  reason     String?
+  createdAt  DateTime @default(now())
+  blocker    User     @relation("BlockedUsers", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked    User     @relation("BlockedByUsers", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+model Quiz {
+  id                 String         @id @default(uuid())
+  title              String
+  description        String?
+  coverImage         String?
+  category           String
+  tags               String[]       @default([])
+  status             QuizStatus     @default(PUBLISHED)
+  isPublic           Boolean        @default(true)
+  settings           Json           @default("{}")
+  randomizeQuestions Boolean        @default(false)
+  randomizeAnswers   Boolean        @default(false)
+  timeLimit          Int?
+  allowRetakes       Boolean        @default(true)
+  showCorrectAnswers Boolean        @default(true)
+  requireLogin       Boolean        @default(false)
+  communityId        String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  creatorId          String
+  comments           Comment[]
+  questions          Question[]
+  community          Community?     @relation(fields: [communityId], references: [id])
+  creator            User           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  likes              QuizLike[]
+  ratings            QuizRating[]
+  responses          QuizResponse[]
+  socialMediaPosts   SocialMediaPost[]
+
+  @@index([creatorId])
+  @@index([category])
+  @@index([communityId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([title])
+  @@index([status, category])
+  @@index([status, createdAt])
+}
+
+model Question {
+  id                  String           @id @default(uuid())
+  quizId              String
+  questionText        String
+  questionType        QuestionType
+  imageUrl            String?
+  orderIndex          Int
+  personalityOutcomes Json?
+  answers             Answer[]
+  quiz                Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options             QuestionOption[]
+
+  @@index([quizId])
+}
+
+model QuestionOption {
+  id                String   @id @default(uuid())
+  questionId        String
+  optionText        String
+  imageUrl          String?
+  isCorrect         Boolean  @default(false)
+  points            Int      @default(0)
+  orderIndex        Int
+  personalityWeight Json?
+  question          Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model QuizResponse {
+  id          String   @id @default(uuid())
+  quizId      String
+  userId      String?
+  score       Int?
+  resultType  String?
+  completedAt DateTime @default(now())
+  answers     Answer[]
+  quiz        Quiz     @relation(fields: [quizId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([quizId])
+  @@index([userId])
+  @@index([completedAt])
+}
+
+model Answer {
+  id               String       @id @default(uuid())
+  responseId       String
+  questionId       String
+  selectedOptionId String?
+  answerValue      String?
+  question         Question     @relation(fields: [questionId], references: [id])
+  response         QuizResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+
+  @@index([responseId])
+  @@index([questionId])
+}
+
+model QuizRating {
+  id        String   @id @default(uuid())
+  quizId    String
+  userId    String
+  rating    Int
+  review    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, userId])
+  @@index([quizId])
+  @@index([userId])
+}
+
+model QuizLike {
+  id        String   @id @default(uuid())
+  quizId    String
+  userId    String
+  createdAt DateTime @default(now())
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user      User     @relation("QuizLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, userId])
+  @@index([quizId])
+  @@index([userId])
+}
+
+model Comment {
+  id        String        @id @default(uuid())
+  quizId    String
+  userId    String
+  content   String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  parentId  String?
+  parent    Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]     @relation("CommentReplies")
+  quiz      Quiz          @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes     CommentLike[]
+
+  @@index([quizId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([createdAt])
+}
+
+model CommentLike {
+  id        String   @id @default(uuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+}
+
+model Community {
+  id          String            @id @default(uuid())
+  name        String
+  description String?
+  coverImage  String?
+  isPublic    Boolean           @default(true)
+  creatorId   String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  creator     User              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  members     CommunityMember[]
+  quizzes     Quiz[]
+
+  @@index([creatorId])
+  @@index([createdAt])
+}
+
+model CommunityMember {
+  id          String        @id @default(uuid())
+  userId      String
+  communityId String
+  role        CommunityRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+  community   Community     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId])
+  @@index([userId])
+  @@index([communityId])
+}
+
+model BlockedEmail {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  reason    String?
+  blockedAt DateTime @default(now())
+  blockedBy String
+  admin     User     @relation("BlockedEmailsCreated", fields: [blockedBy], references: [id])
+
+  @@index([email])
+  @@index([blockedBy])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  action     String
+  targetType String
+  targetId   String?
+  oldValue   String?
+  newValue   String?
+  reason     String?
+  createdAt  DateTime @default(now())
+  admin      User     @relation("AuditLogs", fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String
+  type        NotificationType
+  actorId     String?
+  actorName   String?
+  actorAvatar String?
+  quizId      String?
+  quizTitle   String?
+  commentId   String?
+  commentText String?
+  message     String
+  actionUrl   String?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model EarlyAdopter {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  name             String?
+  referralSource   String?
+  interests        String[]  @default([])
+  notified         Boolean   @default(false)
+  notifiedAt       DateTime?
+  signupCompleted  Boolean   @default(false)
+  signupCompletedAt DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+  @@index([notified])
+  @@index([signupCompleted])
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  PREMIUM
+}
+
+enum QuizStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  PERSONALITY
+  POLL
+  RATING
+}
+
+enum CommunityRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}
+
+enum NotificationType {
+  COMMENT_ON_QUIZ
+  COMMENT_REPLY
+  QUIZ_TAKEN
+  QUIZ_LIKED
+  NEW_FOLLOWER
+  QUIZ_MILESTONE
+  FOLLOWED_USER_QUIZ
+  NEW_MESSAGE
+}
+
+model Conversation {
+  id              String                    @id @default(uuid())
+  type            String                    @default("direct")
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  lastMessageAt   DateTime                  @default(now())
+  participants    ConversationParticipant[]
+  messages        Message[]
+
+  @@index([lastMessageAt(sort: Desc)])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime     @default(now())
+  isArchived     Boolean      @default(false)
+  isMuted        Boolean      @default(false)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId, lastReadAt])
+  @@index([conversationId])
+}
+
+model Message {
+  id             String            @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  contentType    String            @default("text")
+  metadata       Json?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime?
+  deletedAt      DateTime?
+  status         MessageStatus     @default(SENT)
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User              @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  reactions      MessageReaction[]
+  reads          MessageRead[]
+  reports        MessageReport[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+}
+
+model MessageRead {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId, userId])
+}
+
+model MessageReport {
+  id          String              @id @default(uuid())
+  messageId   String
+  reportedBy  String
+  reason      String
+  description String?
+  status      MessageReportStatus @default(PENDING)
+  createdAt   DateTime            @default(now())
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  message     Message             @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reporter    User                @relation(fields: [reportedBy], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([reportedBy])
+  @@index([status])
+}
+
+enum MessageStatus {
+  SENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+enum MessageReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+model SocialMediaConnection {
+  id                      String              @id @default(uuid())
+  userId                  String
+  platform                SocialMediaPlatform
+
+  // Tumblr-specific fields
+  tumblrBlogName          String?
+  tumblrOAuthToken        String?             // Encrypted
+  tumblrOAuthSecret       String?             // Encrypted
+
+  // Facebook-specific fields
+  facebookPageId          String?
+  facebookPageName        String?
+  facebookAccessToken     String?             // Encrypted
+  facebookPageAccessToken String?             // Encrypted
+
+  // Common fields
+  isActive                Boolean             @default(true)
+  lastSyncedAt            DateTime?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  user                    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publishedPosts          SocialMediaPost[]
+
+  @@unique([userId, platform, tumblrBlogName])
+  @@unique([userId, platform, facebookPageId])
+  @@index([userId])
+  @@index([platform])
+  @@index([isActive])
+}
+
+model SocialMediaPost {
+  id             String                @id @default(uuid())
+  quizId         String
+  connectionId   String
+  platform       SocialMediaPlatform
+
+  externalPostId String                // ID from Tumblr/Facebook
+  externalUrl    String?               // Direct URL to post
+
+  publishedAt    DateTime              @default(now())
+  lastSyncedAt   DateTime?
+
+  // Engagement metrics
+  likes          Int                   @default(0)
+  shares         Int                   @default(0)
+  comments       Int                   @default(0)
+  views          Int                   @default(0)
+
+  quiz           Quiz                  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  connection     SocialMediaConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, externalPostId])
+  @@index([quizId])
+  @@index([connectionId])
+  @@index([publishedAt])
+  @@index([platform])
+}
+
+enum SocialMediaPlatform {
+  TUMBLR
+  FACEBOOK
+}
