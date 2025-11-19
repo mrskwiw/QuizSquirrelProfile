@@ -3,6 +3,7 @@ import { prismaRLS, withUserContext } from '@/lib/prisma-rls'
 import { requireAuth, getCurrentUser } from '@/lib/auth'
 import { validateUUID } from '@/lib/validation'
 import { notifyQuizCreator, notifyCommentReply } from '@/lib/notifications'
+import { randomUUID } from 'crypto'
 
 interface RouteParams {
   params: Promise<{
@@ -36,7 +37,7 @@ export async function GET(
           parentId: null, // Only get top-level comments
         },
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -45,9 +46,9 @@ export async function GET(
               isVerified: true,
             },
           },
-          replies: {
+          other_Comment: {
             include: {
-              user: {
+              User: {
                 select: {
                   id: true,
                   username: true,
@@ -58,7 +59,7 @@ export async function GET(
               },
               _count: {
                 select: {
-                  likes: true,
+                  CommentLike: true,
                 },
               },
             },
@@ -68,8 +69,8 @@ export async function GET(
           },
           _count: {
             select: {
-              likes: true,
-              replies: true,
+              CommentLike: true,
+              other_Comment: true,
             },
           },
         },
@@ -160,13 +161,15 @@ export async function POST(
       // Create comment with sanitized content
       const comment = await db.comment.create({
         data: {
+          id: randomUUID(),
           quizId: id,
           userId: user.id,
           content: sanitizeHTML(body.content.trim()),
           parentId: body.parentId || null,
+          updatedAt: new Date(),
         },
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -177,8 +180,8 @@ export async function POST(
           },
           _count: {
             select: {
-              likes: true,
-              replies: true,
+              CommentLike: true,
+              other_Comment: true,
             },
           },
         },

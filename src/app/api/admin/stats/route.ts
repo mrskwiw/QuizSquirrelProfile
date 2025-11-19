@@ -58,7 +58,7 @@ export async function GET() {
         createdAt: 'desc',
       },
       include: {
-        admin: {
+        User: {
           select: {
             username: true,
             displayName: true,
@@ -107,7 +107,7 @@ export async function GET() {
         published: publishedQuizzes,
         draft: totalQuizzes - publishedQuizzes,
       },
-      responses: {
+      QuizResponse: {
         total: totalResponses,
       },
       blocked: {

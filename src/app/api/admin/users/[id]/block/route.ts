@@ -66,7 +66,7 @@ export async function POST(
 
     return NextResponse.json({
       message: `User ${blocked ? 'blocked' : 'unblocked'} successfully`,
-      user: {
+      User: {
         id: updatedUser.id,
         isBlocked: updatedUser.isBlocked,
         blockedReason: updatedUser.blockedReason,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
 import { prisma as db } from '@/lib/prisma'
 import { requireAdmin, logAdminAction } from '@/lib/admin'
+import { randomUUID } from 'crypto'
 
 export async function GET() {
   try {
@@ -10,7 +11,7 @@ export async function GET() {
 
     const blockedEmails = await db.blockedEmail.findMany({
       include: {
-        admin: {
+        User: {
           select: {
             username: true,
             displayName: true,
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
 
     const blockedEmail = await db.blockedEmail.create({
       data: {
+        id: randomUUID(),
         email: email.toLowerCase(),
         reason,
         blockedBy: admin.id,

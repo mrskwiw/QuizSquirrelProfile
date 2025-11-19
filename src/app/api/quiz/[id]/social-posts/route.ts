@@ -63,7 +63,7 @@ export async function GET(
           quizId,
         },
         include: {
-          connection: {
+          SocialMediaConnection: {
             select: {
               platform: true,
               tumblrBlogName: true,
@@ -87,7 +87,7 @@ export async function GET(
         shares: post.shares,
         comments: post.comments,
         views: post.views,
-        blogName: post.connection.tumblrBlogName || post.connection.facebookPageName || undefined,
+        blogName: post.SocialMediaConnection.tumblrBlogName || post.SocialMediaConnection.facebookPageName || undefined,
       }))
 
       return {

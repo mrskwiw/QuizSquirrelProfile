@@ -126,12 +126,12 @@ export async function POST(request: NextRequest) {
           requireLogin: body.settings.requireLogin,
           timeLimit: body.settings.timeLimit,
         },
-        questions: {
+        Question: {
           create: body.questions.map((question) => ({
             questionText: sanitizeHTML(question.questionText),
             questionType: question.questionType,
             orderIndex: question.orderIndex,
-            options: {
+            QuestionOption: {
               create: question.options.map((option) => ({
                 optionText: sanitizeHTML(option.optionText),
                 orderIndex: option.orderIndex,
@@ -147,15 +147,15 @@ export async function POST(request: NextRequest) {
         db.quiz.create({
           data: sanitizedQuizData,
           include: {
-            questions: {
+            Question: {
               include: {
-                options: true,
+                QuestionOption: true,
               },
               orderBy: {
                 orderIndex: 'asc',
               },
             },
-            creator: {
+            User: {
               select: {
                 id: true,
                 username: true,
@@ -249,7 +249,7 @@ export async function GET(request: NextRequest) {
                 status: 'PUBLISHED',
               },
               include: {
-                creator: {
+                User: {
                   select: {
                     id: true,
                     username: true,
@@ -260,9 +260,9 @@ export async function GET(request: NextRequest) {
                 },
                 _count: {
                   select: {
-                    responses: true,
-                    likes: true,
-                    comments: true,
+                    QuizResponse: true,
+                    QuizLike: true,
+                    Comment: true,
                   },
                 },
               },
@@ -302,7 +302,7 @@ export async function GET(request: NextRequest) {
           const quizzes = await db.quiz.findMany({
             where: {
               status: 'PUBLISHED',
-              responses: {
+              QuizResponse: {
                 some: {
                   completedAt: {
                     gte: timeframeDate,
@@ -311,7 +311,7 @@ export async function GET(request: NextRequest) {
               },
             },
             include: {
-              creator: {
+              User: {
                 select: {
                   id: true,
                   username: true,
@@ -322,12 +322,12 @@ export async function GET(request: NextRequest) {
               },
               _count: {
                 select: {
-                  responses: true,
-                  likes: true,
-                  comments: true,
+                  QuizResponse: true,
+                  QuizLike: true,
+                  Comment: true,
                 },
               },
-              responses: {
+              QuizResponse: {
                 where: {
                   completedAt: {
                     gte: timeframeDate,
@@ -346,16 +346,16 @@ export async function GET(request: NextRequest) {
           const sortedQuizzes = quizzes
             .map((quiz) => ({
               ...quiz,
-              recentResponseCount: quiz.responses.length,
+              recentResponseCount: quiz.QuizResponse.length,
             }))
             .sort((a, b) => b.recentResponseCount - a.recentResponseCount)
             .slice(0, limit) // Apply limit after sorting
-            .map(({ responses, ...quiz }) => quiz) // Remove the responses array from response
+            .map(({ QuizResponse, ...quiz }) => quiz) // Remove the responses array from response
 
           const total = await db.quiz.count({
             where: {
               status: 'PUBLISHED',
-              responses: {
+              QuizResponse: {
                 some: {
                   completedAt: {
                     gte: timeframeDate,
@@ -387,9 +387,9 @@ export async function GET(request: NextRequest) {
         db.quiz.findMany({
           where,
           include: {
-            questions: {
+            Question: {
               include: {
-                options: true,
+                QuestionOption: true,
               },
               orderBy: {
                 orderIndex: 'asc',
@@ -397,8 +397,8 @@ export async function GET(request: NextRequest) {
             },
             _count: {
               select: {
-                responses: true,
-                likes: true,
+                QuizResponse: true,
+                QuizLike: true,
               },
             },
           },

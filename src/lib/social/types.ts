@@ -50,6 +50,13 @@ export interface QuizShareContent {
   tags: string[];
   quizUrl: string;
   creatorName: string;
+  questions?: Array<{
+    text: string;
+    type: string;
+    options?: Array<{
+      text: string;
+    }>;
+  }>;
 }
 
 export interface PublishResult {

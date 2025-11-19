@@ -6,7 +6,7 @@ import { validateUUID } from '@/lib/validation'
 
 interface SubmitQuizRequest {
   quizId: string
-  answers: {
+  Answer: {
     questionId: string
     optionId: string
   }[]
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const body: SubmitQuizRequest = await request.json()
 
     // Validate request
-    if (!body.quizId || !body.answers || body.answers.length === 0) {
+    if (!body.quizId || !body.Answer || body.Answer.length === 0) {
       return NextResponse.json(
         { error: 'Quiz ID and answers are required' },
         { status: 400 }
@@ -39,9 +39,9 @@ export async function POST(request: NextRequest) {
     const quiz = await prisma.quiz.findUnique({
       where: { id: body.quizId },
       include: {
-        questions: {
+        Question: {
           include: {
-            options: true,
+            QuestionOption: true,
           },
         },
       },
@@ -64,18 +64,18 @@ export async function POST(request: NextRequest) {
 
     // Validate all answers before processing
     // Build valid question and option ID sets
-    const validQuestionIds = new Set(quiz.questions.map(q => q.id))
+    const validQuestionIds = new Set(quiz.Question.map((q: any) => q.id))
     const validOptionIds = new Set<string>()
     const questionToOptionsMap = new Map<string, Set<string>>()
 
-    quiz.questions.forEach(question => {
-      const optionIds = question.options.map(o => o.id)
-      optionIds.forEach(id => validOptionIds.add(id))
+    quiz.Question.forEach((question: any) => {
+      const optionIds = question.QuestionOption.map((o: any) => o.id)
+      optionIds.forEach((id: string) => validOptionIds.add(id))
       questionToOptionsMap.set(question.id, new Set(optionIds))
     })
 
     // Validate each answer
-    for (const answer of body.answers) {
+    for (const answer of body.Answer) {
       // Validate question ID exists in quiz
       if (!validQuestionIds.has(answer.questionId)) {
         return NextResponse.json(
@@ -105,12 +105,12 @@ export async function POST(request: NextRequest) {
     // Calculate score for multiple choice quizzes
     let score = 0
     let totalPossible = 0
-    const results = body.answers.map(answer => {
-      const question = quiz.questions.find(q => q.id === answer.questionId)
+    const results = body.Answer.map((answer: any) => {
+      const question = quiz.Question.find((q: any) => q.id === answer.questionId)
       if (!question) return null
 
-      const selectedOption = question.options.find(o => o.id === answer.optionId)
-      const correctOption = question.options.find(o => o.isCorrect)
+      const selectedOption = question.QuestionOption.find((o: any) => o.id === answer.optionId)
+      const correctOption = question.QuestionOption.find((o: any) => o.isCorrect)
 
       if (question.questionType === 'MULTIPLE_CHOICE' && correctOption) {
         totalPossible++
@@ -144,8 +144,8 @@ export async function POST(request: NextRequest) {
         userId: user?.id,
         score: totalPossible > 0 ? Math.round((score / totalPossible) * 100) : null,
         completedAt: new Date(),
-        answers: {
-          create: body.answers.map(a => ({
+        Answer: {
+          create: body.Answer.map((a: any) => ({
             questionId: a.questionId,
             selectedOptionId: a.optionId,
           })),
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
       success: true,
       responseId: response.id,
       score: totalPossible > 0 ? score : null,
-      totalQuestions: totalPossible > 0 ? totalPossible : quiz.questions.length,
+      totalQuestions: totalPossible > 0 ? totalPossible : quiz.Question.length,
       percentage: response.score,
       showCorrectAnswers: quiz.showCorrectAnswers,
       results: quiz.showCorrectAnswers ? results : null,

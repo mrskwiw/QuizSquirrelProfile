@@ -39,7 +39,7 @@ async function getQuiz(id: string) {
   const quiz = await prisma.quiz.findUnique({
     where: { id },
     include: {
-      creator: {
+      User: {
         select: {
           id: true,
           username: true,
@@ -48,9 +48,9 @@ async function getQuiz(id: string) {
           isVerified: true,
         },
       },
-      questions: {
+      Question: {
         include: {
-          options: {
+          QuestionOption: {
             orderBy: {
               orderIndex: 'asc',
             },
@@ -62,9 +62,9 @@ async function getQuiz(id: string) {
       },
       _count: {
         select: {
-          responses: true,
-          likes: true,
-          comments: true,
+          QuizResponse: true,
+          QuizLike: true,
+          Comment: true,
         },
       },
     },
@@ -99,7 +99,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Quiz Header */}
-        <QuizHeader quiz={quiz} />
+        <QuizHeader quiz={quiz as any} />
 
         {/* Quiz Taker Component */}
         <QuizTaker
@@ -107,12 +107,12 @@ export default async function QuizPage({ params }: QuizPageProps) {
             id: quiz.id,
             title: quiz.title,
             description: quiz.description || undefined,
-            questions: quiz.questions.map(q => ({
+            questions: (quiz as any).Question.map((q: any) => ({
               id: q.id,
               questionText: q.questionText,
               questionType: q.questionType,
               orderIndex: q.orderIndex,
-              options: q.options.map(opt => ({
+              options: q.QuestionOption.map((opt: any) => ({
                 id: opt.id,
                 optionText: opt.optionText,
                 orderIndex: opt.orderIndex,

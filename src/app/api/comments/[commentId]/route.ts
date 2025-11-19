@@ -32,7 +32,7 @@ export async function GET(
       return await db.comment.findUnique({
         where: { id: commentId },
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -41,9 +41,9 @@ export async function GET(
               isVerified: true,
             },
           },
-          replies: {
+          other_Comment: {
             include: {
-              user: {
+              User: {
                 select: {
                   id: true,
                   username: true,
@@ -54,7 +54,7 @@ export async function GET(
               },
               _count: {
                 select: {
-                  likes: true,
+                  CommentLike: true,
                 },
               },
             },
@@ -64,8 +64,8 @@ export async function GET(
           },
           _count: {
             select: {
-              likes: true,
-              replies: true,
+              CommentLike: true,
+              other_Comment: true,
             },
           },
         },
@@ -146,7 +146,7 @@ export async function PUT(
           content: sanitizeHTML(body.content.trim()),
         },
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -157,8 +157,8 @@ export async function PUT(
           },
           _count: {
             select: {
-              likes: true,
-              replies: true,
+              CommentLike: true,
+              other_Comment: true,
             },
           },
         },

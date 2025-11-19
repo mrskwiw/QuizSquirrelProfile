@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 interface EarlyAdopterRequest {
   email: string
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
     // Create new early adopter record
     const earlyAdopter = await prisma.earlyAdopter.create({
       data: {
+        id: randomUUID(),
         email: sanitizedEmail,
         name: body.name?.trim() || null,
         referralSource: body.referralSource?.trim() || null,

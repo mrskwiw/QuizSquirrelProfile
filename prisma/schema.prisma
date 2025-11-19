@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Answer {
-  id               String       @id
+  id               String   @id @default(uuid())
   responseId       String
   questionId       String
   selectedOptionId String?
@@ -21,7 +21,7 @@ model Answer {
 }
 
 model AuditLog {
-  id         String   @id
+  id               String   @id @default(uuid())
   adminId    String
   action     String
   targetType String
@@ -39,7 +39,7 @@ model AuditLog {
 }
 
 model BlockedEmail {
-  id        String   @id
+  id               String   @id @default(uuid())
   email     String   @unique
   reason    String?
   blockedAt DateTime @default(now())
@@ -51,12 +51,12 @@ model BlockedEmail {
 }
 
 model Comment {
-  id            String        @id
+  id               String   @id @default(uuid())
   quizId        String
   userId        String
   content       String
   createdAt     DateTime      @default(now())
-  updatedAt     DateTime
+  updatedAt        DateTime @updatedAt
   parentId      String?
   Comment       Comment?      @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade)
   other_Comment Comment[]     @relation("CommentToComment")
@@ -71,7 +71,7 @@ model Comment {
 }
 
 model CommentLike {
-  id        String   @id
+  id               String   @id @default(uuid())
   commentId String
   userId    String
   createdAt DateTime @default(now())
@@ -84,14 +84,14 @@ model CommentLike {
 }
 
 model Community {
-  id              String            @id
+  id               String   @id @default(uuid())
   name            String
   description     String?
   coverImage      String?
   isPublic        Boolean           @default(true)
   creatorId       String
   createdAt       DateTime          @default(now())
-  updatedAt       DateTime
+  updatedAt        DateTime @updatedAt
   User            User              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   CommunityMember CommunityMember[]
   Quiz            Quiz[]
@@ -101,7 +101,7 @@ model Community {
 }
 
 model CommunityMember {
-  id          String        @id
+  id               String   @id @default(uuid())
   userId      String
   communityId String
   role        CommunityRole @default(MEMBER)
@@ -115,10 +115,10 @@ model CommunityMember {
 }
 
 model Conversation {
-  id                      String                    @id
+  id               String   @id @default(uuid())
   type                    String                    @default("direct")
   createdAt               DateTime                  @default(now())
-  updatedAt               DateTime
+  updatedAt        DateTime @updatedAt
   lastMessageAt           DateTime                  @default(now())
   ConversationParticipant ConversationParticipant[]
   Message                 Message[]
@@ -127,7 +127,7 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  id             String       @id
+  id               String   @id @default(uuid())
   conversationId String
   userId         String
   joinedAt       DateTime     @default(now())
@@ -143,7 +143,7 @@ model ConversationParticipant {
 }
 
 model EarlyAdopter {
-  id                String    @id
+  id               String   @id @default(uuid())
   email             String    @unique
   notified          Boolean   @default(false)
   createdAt         DateTime  @default(now())
@@ -161,7 +161,7 @@ model EarlyAdopter {
 }
 
 model Follow {
-  id                            String   @id
+  id               String   @id @default(uuid())
   followerId                    String
   followingId                   String
   createdAt                     DateTime @default(now())
@@ -174,7 +174,7 @@ model Follow {
 }
 
 model Message {
-  id              String            @id
+  id               String   @id @default(uuid())
   conversationId  String
   senderId        String
   content         String
@@ -195,7 +195,7 @@ model Message {
 }
 
 model MessageReaction {
-  id        String   @id
+  id               String   @id @default(uuid())
   messageId String
   userId    String
   emoji     String
@@ -209,7 +209,7 @@ model MessageReaction {
 }
 
 model MessageRead {
-  id        String   @id
+  id               String   @id @default(uuid())
   messageId String
   userId    String
   readAt    DateTime @default(now())
@@ -221,7 +221,7 @@ model MessageRead {
 }
 
 model MessageReport {
-  id          String              @id
+  id               String   @id @default(uuid())
   messageId   String
   reportedBy  String
   reason      String
@@ -239,7 +239,7 @@ model MessageReport {
 }
 
 model Notification {
-  id          String           @id
+  id               String   @id @default(uuid())
   userId      String
   type        NotificationType
   actorId     String?
@@ -261,7 +261,7 @@ model Notification {
 }
 
 model Question {
-  id                  String           @id
+  id               String   @id @default(uuid())
   quizId              String
   questionText        String
   questionType        QuestionType
@@ -276,7 +276,7 @@ model Question {
 }
 
 model QuestionOption {
-  id                String   @id
+  id               String   @id @default(uuid())
   questionId        String
   optionText        String
   isCorrect         Boolean  @default(false)
@@ -290,7 +290,7 @@ model QuestionOption {
 }
 
 model Quiz {
-  id                 String            @id
+  id               String   @id @default(uuid())
   title              String
   description        String?
   coverImage         String?
@@ -307,7 +307,7 @@ model Quiz {
   requireLogin       Boolean           @default(false)
   communityId        String?
   createdAt          DateTime          @default(now())
-  updatedAt          DateTime
+  updatedAt        DateTime @updatedAt
   creatorId          String
   Comment            Comment[]
   Question           Question[]
@@ -329,7 +329,7 @@ model Quiz {
 }
 
 model QuizLike {
-  id        String   @id
+  id               String   @id @default(uuid())
   quizId    String
   userId    String
   createdAt DateTime @default(now())
@@ -342,13 +342,13 @@ model QuizLike {
 }
 
 model QuizRating {
-  id        String   @id
+  id               String   @id @default(uuid())
   quizId    String
   userId    String
   rating    Int
   review    String?
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt        DateTime @updatedAt
   Quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -358,7 +358,7 @@ model QuizRating {
 }
 
 model QuizResponse {
-  id          String   @id
+  id               String   @id @default(uuid())
   quizId      String
   userId      String?
   score       Int?
@@ -374,7 +374,7 @@ model QuizResponse {
 }
 
 model SocialMediaConnection {
-  id                      String              @id
+  id               String   @id @default(uuid())
   userId                  String
   platform                SocialMediaPlatform
   tumblrBlogName          String?
@@ -387,7 +387,7 @@ model SocialMediaConnection {
   isActive                Boolean             @default(true)
   lastSyncedAt            DateTime?
   createdAt               DateTime            @default(now())
-  updatedAt               DateTime
+  updatedAt        DateTime @updatedAt
   User                    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   SocialMediaPost         SocialMediaPost[]
 
@@ -399,7 +399,7 @@ model SocialMediaConnection {
 }
 
 model SocialMediaPost {
-  id                    String                @id
+  id               String   @id @default(uuid())
   quizId                String
   connectionId          String
   platform              SocialMediaPlatform
@@ -422,7 +422,7 @@ model SocialMediaPost {
 }
 
 model User {
-  id                                  String                    @id
+  id               String   @id @default(uuid())
   email                               String                    @unique
   username                            String                    @unique
   displayName                         String
@@ -442,7 +442,7 @@ model User {
   quizzesCreatedToday                 Int                       @default(0)
   lastQuizCreatedAt                   DateTime?
   createdAt                           DateTime                  @default(now())
-  updatedAt                           DateTime
+  updatedAt        DateTime @updatedAt
   instagramHandle                     String?
   interests                           String[]                  @default([])
   location                            String?
@@ -481,7 +481,7 @@ model User {
 }
 
 model UserBlock {
-  id                             String   @id
+  id               String   @id @default(uuid())
   blockerId                      String
   blockedId                      String
   reason                         String?

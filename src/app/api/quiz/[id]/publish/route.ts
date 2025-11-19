@@ -70,15 +70,15 @@ export async function POST(
           where: { id },
           data: { status: 'PUBLISHED' },
           include: {
-            questions: {
+            Question: {
               include: {
-                options: true,
+                QuestionOption: true,
               },
               orderBy: {
                 orderIndex: 'asc',
               },
             },
-            creator: {
+            User: {
               select: {
                 id: true,
                 username: true,

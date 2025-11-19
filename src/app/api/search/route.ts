@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       category: string
       status: string
       createdAt: Date
-      creator: {
+      User: {
         id: string
         username: string
         displayName: string
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
           return await prisma.quiz.findMany({
             where: quizFilter,
             include: {
-              creator: {
+              User: {
                 select: {
                   id: true,
                   username: true,
@@ -113,9 +113,9 @@ export async function GET(request: NextRequest) {
               },
               _count: {
                 select: {
-                  responses: true,
-                  likes: true,
-                  comments: true,
+                  QuizResponse: true,
+                  QuizLike: true,
+                  Comment: true,
                 },
               },
             },
@@ -155,9 +155,9 @@ export async function GET(request: NextRequest) {
               bio: true,
               _count: {
                 select: {
-                  quizzes: true,
-                  followers: true,
-                  following: true,
+                  Quiz: true,
+                  Follow_Follow_followerIdToUser: true,
+                  Follow_Follow_followingIdToUser: true,
                 },
               },
             },
@@ -172,8 +172,8 @@ export async function GET(request: NextRequest) {
     ])
 
     const results: SearchResults = {
-      quizzes: quizzes as QuizResult[],
-      users: users as UserResult[],
+      quizzes: quizzes as any as QuizResult[],
+      users: users as any as UserResult[],
     }
 
     // Calculate total counts

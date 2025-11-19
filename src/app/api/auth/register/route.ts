@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { validatePassword, validateEmail, validateUsername } from '@/lib/validation'
+import { randomUUID } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,16 +75,18 @@ export async function POST(request: NextRequest) {
     // Create user
     const user = await prisma.user.create({
       data: {
+        id: randomUUID(),
         email: email.toLowerCase(),
         username: username.toLowerCase(),
         displayName,
         password: hashedPassword,
+        updatedAt: new Date(),
       }
     })
 
     return NextResponse.json({
       message: 'User created successfully',
-      user: {
+      User: {
         id: user.id,
         email: user.email,
         username: user.username,

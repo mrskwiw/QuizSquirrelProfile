@@ -15,9 +15,9 @@ export async function GET() {
         lastMessageAt: 'desc',
       },
       include: {
-        participants: {
+        ConversationParticipant: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 username: true,
@@ -27,13 +27,13 @@ export async function GET() {
             },
           },
         },
-        messages: {
+        Message: {
           orderBy: {
             createdAt: 'desc',
           },
           take: 1,
           include: {
-            sender: {
+            User: {
               select: {
                 username: true,
               },
@@ -42,7 +42,7 @@ export async function GET() {
         },
         _count: {
           select: {
-            messages: true,
+            Message: true,
           },
         },
       },
@@ -50,14 +50,14 @@ export async function GET() {
 
     const conversationsWithDetails = conversations.map((conv) => ({
       id: conv.id,
-      participants: conv.participants,
+      participants: conv.ConversationParticipant,
       lastMessageAt: conv.lastMessageAt,
-      messageCount: conv._count.messages,
-      lastMessage: conv.messages[0]
+      messageCount: conv._count.Message,
+      lastMessage: conv.Message[0]
         ? {
-            content: conv.messages[0].content,
-            createdAt: conv.messages[0].createdAt,
-            sender: conv.messages[0].sender,
+            content: conv.Message[0].content,
+            createdAt: conv.Message[0].createdAt,
+            sender: conv.Message[0].User,
           }
         : undefined,
     }))

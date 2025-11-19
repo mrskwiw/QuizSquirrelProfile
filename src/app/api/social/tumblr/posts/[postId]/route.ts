@@ -30,14 +30,14 @@ export async function GET(
     const post = await prisma.socialMediaPost.findUnique({
       where: { id: postId },
       include: {
-        quiz: {
+        Quiz: {
           select: {
             id: true,
             title: true,
             coverImage: true,
           },
         },
-        connection: {
+        SocialMediaConnection: {
           select: {
             id: true,
             userId: true,
@@ -55,7 +55,7 @@ export async function GET(
     }
 
     // Verify user owns the connection
-    if (post.connection.userId !== user.id) {
+    if (post.SocialMediaConnection.userId !== user.id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -66,9 +66,9 @@ export async function GET(
       success: true,
       post: {
         id: post.id,
-        quiz: post.quiz,
+        quiz: post.Quiz,
         platform: post.platform,
-        blogName: post.connection.tumblrBlogName,
+        blogName: post.SocialMediaConnection.tumblrBlogName,
         externalUrl: post.externalUrl,
         publishedAt: post.publishedAt,
         metrics: {
@@ -138,7 +138,7 @@ export async function PATCH(
     const post = await prisma.socialMediaPost.findUnique({
       where: { id: postId },
       include: {
-        connection: {
+        SocialMediaConnection: {
           select: { userId: true },
         },
       },
@@ -151,7 +151,7 @@ export async function PATCH(
       );
     }
 
-    if (post.connection.userId !== user.id) {
+    if (post.SocialMediaConnection.userId !== user.id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }

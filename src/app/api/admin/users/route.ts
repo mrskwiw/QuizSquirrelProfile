@@ -60,10 +60,10 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         _count: {
           select: {
-            quizzes: true,
-            responses: true,
-            followers: true,
-            following: true,
+            Quiz: true,
+            QuizResponse: true,
+            Follow_Follow_followingIdToUser: true,
+            Follow_Follow_followerIdToUser: true,
           },
         },
       },

@@ -50,9 +50,9 @@ export async function GET(
           createdAt: true,
           _count: {
             select: {
-              responses: true,
-              likes: true,
-              comments: true,
+              QuizResponse: true,
+              QuizLike: true,
+              Comment: true,
             },
           },
         },

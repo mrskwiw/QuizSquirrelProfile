@@ -55,7 +55,7 @@ export async function POST(
 
     return NextResponse.json({
       message: 'User tier updated successfully',
-      user: {
+      User: {
         id: updatedUser.id,
         subscriptionTier: updatedUser.subscriptionTier,
       },

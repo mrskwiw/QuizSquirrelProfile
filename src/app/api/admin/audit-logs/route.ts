@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const logs = await db.auditLog.findMany({
       where,
       include: {
-        admin: {
+        User: {
           select: {
             id: true,
             username: true,

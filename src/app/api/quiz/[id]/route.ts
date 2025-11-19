@@ -34,9 +34,9 @@ export async function GET(
           id: id,
         },
         include: {
-          questions: {
+          Question: {
             include: {
-              options: {
+              QuestionOption: {
                 orderBy: {
                   orderIndex: 'asc',
                 },
@@ -46,7 +46,7 @@ export async function GET(
               orderIndex: 'asc',
             },
           },
-          creator: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -56,9 +56,9 @@ export async function GET(
           },
           _count: {
             select: {
-              likes: true,
-              comments: true,
-              responses: true,
+              QuizLike: true,
+              Comment: true,
+              QuizResponse: true,
             },
           },
         },
@@ -173,12 +173,12 @@ export async function PUT(
             requireLogin: body.settings.requireLogin,
             timeLimit: body.settings.timeLimit,
           },
-          questions: {
+          Question: {
             create: body.questions.map((question: any) => ({
               questionText: sanitizeHTML(question.questionText),
               questionType: question.questionType,
               orderIndex: question.orderIndex,
-              options: {
+              QuestionOption: {
                 create: question.options.map((option: any) => ({
                   optionText: sanitizeHTML(option.optionText),
                   orderIndex: option.orderIndex,
@@ -189,9 +189,9 @@ export async function PUT(
           },
         },
         include: {
-          questions: {
+          Question: {
             include: {
-              options: true,
+              QuestionOption: true,
             },
             orderBy: {
               orderIndex: 'asc',

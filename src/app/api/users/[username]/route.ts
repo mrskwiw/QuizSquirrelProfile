@@ -49,14 +49,14 @@ export async function GET(
           createdAt: true,
           _count: {
             select: {
-              quizzes: {
+              Quiz: {
                 where: {
                   status: 'PUBLISHED',
                 },
               },
-              responses: true,
-              followers: true,
-              following: true,
+              QuizResponse: true,
+              Follow_Follow_followerIdToUser: true,
+              Follow_Follow_followingIdToUser: true,
             },
           },
         },
@@ -124,9 +124,9 @@ export async function GET(
 
       // Stats
       stats: {
-        quizCount: user._count.quizzes,
-        followerCount: user._count.followers,
-        followingCount: user._count.following,
+        quizCount: (user as any)._count.Quiz,
+        followerCount: (user as any)._count.Follow_Follow_followerIdToUser,
+        followingCount: (user as any)._count.Follow_Follow_followingIdToUser,
       },
 
       // Context fields

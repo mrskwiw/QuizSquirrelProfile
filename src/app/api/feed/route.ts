@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           coverImage: true,
           category: true,
           createdAt: true,
-          creator: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -66,9 +66,9 @@ export async function GET(request: NextRequest) {
           },
           _count: {
             select: {
-              responses: true,
-              likes: true,
-              comments: true,
+              QuizResponse: true,
+              QuizLike: true,
+              Comment: true,
             },
           },
         },
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         activities: quizzes.map((quiz) => ({
           type: 'QUIZ_CREATED',
           timestamp: quiz.createdAt,
-          user: quiz.creator,
+          user: quiz.User,
           quiz: {
             id: quiz.id,
             title: quiz.title,
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
           coverImage: true,
           category: true,
           createdAt: true,
-          creator: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -131,9 +131,9 @@ export async function GET(request: NextRequest) {
           },
           _count: {
             select: {
-              responses: true,
-              likes: true,
-              comments: true,
+              QuizResponse: true,
+              QuizLike: true,
+              Comment: true,
             },
           },
         },
@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
         activities: quizzes.map((quiz) => ({
           type: 'QUIZ_CREATED',
           timestamp: quiz.createdAt,
-          user: quiz.creator,
+          user: quiz.User,
           quiz: {
             id: quiz.id,
             title: quiz.title,
@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
           coverImage: true,
           category: true,
           createdAt: true,
-          creator: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -189,9 +189,9 @@ export async function GET(request: NextRequest) {
           },
           _count: {
             select: {
-              responses: true,
-              likes: true,
-              comments: true,
+              QuizResponse: true,
+              QuizLike: true,
+              Comment: true,
             },
           },
         },
@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
       // 2. Get responses on current user's quizzes (people taking YOUR quizzes)
       prisma.quizResponse.findMany({
         where: {
-          quiz: {
+          Quiz: {
             creatorId: user.id,
           },
           userId: {
@@ -213,7 +213,7 @@ export async function GET(request: NextRequest) {
         },
         select: {
           completedAt: true,
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -222,7 +222,7 @@ export async function GET(request: NextRequest) {
               isVerified: true,
             },
           },
-          quiz: {
+          Quiz: {
             select: {
               id: true,
               title: true,
@@ -231,9 +231,9 @@ export async function GET(request: NextRequest) {
               category: true,
               _count: {
                 select: {
-                  responses: true,
-                  likes: true,
-                  comments: true,
+                  QuizResponse: true,
+                  QuizLike: true,
+                  Comment: true,
                 },
               },
             },
@@ -254,7 +254,7 @@ export async function GET(request: NextRequest) {
         },
         select: {
           completedAt: true,
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -263,7 +263,7 @@ export async function GET(request: NextRequest) {
               isVerified: true,
             },
           },
-          quiz: {
+          Quiz: {
             select: {
               id: true,
               title: true,
@@ -272,9 +272,9 @@ export async function GET(request: NextRequest) {
               category: true,
               _count: {
                 select: {
-                  responses: true,
-                  likes: true,
-                  comments: true,
+                  QuizResponse: true,
+                  QuizLike: true,
+                  Comment: true,
                 },
               },
             },
@@ -297,7 +297,7 @@ export async function GET(request: NextRequest) {
           id: true,
           content: true,
           createdAt: true,
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -306,7 +306,7 @@ export async function GET(request: NextRequest) {
               isVerified: true,
             },
           },
-          quiz: {
+          Quiz: {
             select: {
               id: true,
               title: true,
@@ -315,9 +315,9 @@ export async function GET(request: NextRequest) {
               category: true,
               _count: {
                 select: {
-                  responses: true,
-                  likes: true,
-                  comments: true,
+                  QuizResponse: true,
+                  QuizLike: true,
+                  Comment: true,
                 },
               },
             },
@@ -332,7 +332,7 @@ export async function GET(request: NextRequest) {
       // 5. Get comments on current user's quizzes (people commenting on YOUR quizzes)
       prisma.comment.findMany({
         where: {
-          quiz: {
+          Quiz: {
             creatorId: user.id,
           },
           userId: {
@@ -343,7 +343,7 @@ export async function GET(request: NextRequest) {
           id: true,
           content: true,
           createdAt: true,
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -352,7 +352,7 @@ export async function GET(request: NextRequest) {
               isVerified: true,
             },
           },
-          quiz: {
+          Quiz: {
             select: {
               id: true,
               title: true,
@@ -361,9 +361,9 @@ export async function GET(request: NextRequest) {
               category: true,
               _count: {
                 select: {
-                  responses: true,
-                  likes: true,
-                  comments: true,
+                  QuizResponse: true,
+                  QuizLike: true,
+                  Comment: true,
                 },
               },
             },
@@ -381,47 +381,79 @@ export async function GET(request: NextRequest) {
       ...quizzes.map((quiz): FeedActivity => ({
         type: 'QUIZ_CREATED',
         timestamp: quiz.createdAt,
-        user: quiz.creator,
+        user: quiz.User,
         quiz: {
           id: quiz.id,
           title: quiz.title,
           description: quiz.description,
           coverImage: quiz.coverImage,
           category: quiz.category,
-          _count: quiz._count,
+          _count: {
+            responses: quiz._count.QuizResponse,
+            likes: quiz._count.QuizLike,
+            comments: quiz._count.Comment,
+          },
         },
       })),
-      ...responsesOnMyQuizzes.filter(r => r.user !== null).map((response): FeedActivity => ({
+      ...responsesOnMyQuizzes.filter((r: any) => r.User !== null).map((response: any): FeedActivity => ({
         type: 'QUIZ_TAKEN',
         timestamp: response.completedAt,
-        user: response.user!,
-        quiz: response.quiz,
+        user: response.User!,
+        quiz: {
+          ...response.Quiz,
+          _count: {
+            responses: response.Quiz._count.QuizResponse,
+            likes: response.Quiz._count.QuizLike,
+            comments: response.Quiz._count.Comment,
+          },
+        },
       })),
-      ...responses.filter(r => r.user !== null).map((response): FeedActivity => ({
+      ...responses.filter((r: any) => r.User !== null).map((response: any): FeedActivity => ({
         type: 'QUIZ_TAKEN',
         timestamp: response.completedAt,
-        user: response.user!,
-        quiz: response.quiz,
+        user: response.User!,
+        quiz: {
+          ...response.Quiz,
+          _count: {
+            responses: response.Quiz._count.QuizResponse,
+            likes: response.Quiz._count.QuizLike,
+            comments: response.Quiz._count.Comment,
+          },
+        },
       })),
-      ...comments.map((comment): FeedActivity => ({
+      ...comments.map((comment: any): FeedActivity => ({
         type: 'COMMENT',
         timestamp: comment.createdAt,
-        user: comment.user,
+        user: comment.User,
         comment: {
           id: comment.id,
           content: comment.content,
         },
-        quiz: comment.quiz,
+        quiz: {
+          ...comment.Quiz,
+          _count: {
+            responses: comment.Quiz._count.QuizResponse,
+            likes: comment.Quiz._count.QuizLike,
+            comments: comment.Quiz._count.Comment,
+          },
+        },
       })),
-      ...commentsOnMyQuizzes.map((comment): FeedActivity => ({
+      ...commentsOnMyQuizzes.map((comment: any): FeedActivity => ({
         type: 'COMMENT',
         timestamp: comment.createdAt,
-        user: comment.user,
+        user: comment.User,
         comment: {
           id: comment.id,
           content: comment.content,
         },
-        quiz: comment.quiz,
+        quiz: {
+          ...comment.Quiz,
+          _count: {
+            responses: comment.Quiz._count.QuizResponse,
+            likes: comment.Quiz._count.QuizLike,
+            comments: comment.Quiz._count.Comment,
+          },
+        },
       })),
     ]
 
