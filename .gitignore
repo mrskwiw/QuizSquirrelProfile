@@ -48,6 +48,16 @@ next-env.d.ts
 prisma/*.db
 prisma/*.db-journal
 
+# Serena MCP
+.serena/
+
+# Test files
+jest.config.js
+jest.setup.js
+jest.polyfills.js
+test-*.ts
+test-*.js
+
 # Uploads and media
 public/uploads/
 uploads/
