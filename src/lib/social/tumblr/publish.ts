@@ -46,15 +46,34 @@ export async function publishQuizToTumblr(
       );
     }
 
-    // Get the quiz
+    // Get the quiz with questions for preview
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
-        creator: {
+        User: {
           select: {
             username: true,
             displayName: true,
           },
+        },
+        Question: {
+          select: {
+            questionText: true,
+            questionType: true,
+            orderIndex: true,
+            QuestionOption: {
+              select: {
+                optionText: true,
+              },
+              orderBy: {
+                orderIndex: 'asc',
+              },
+            },
+          },
+          orderBy: {
+            orderIndex: 'asc',
+          },
+          take: 3, // Only fetch first 3 questions for preview
         },
       },
     });
@@ -87,7 +106,7 @@ export async function publishQuizToTumblr(
 
     // Prepare quiz content
     const quizUrl = generateQuizUrl(quizId);
-    const creatorName = quiz.creator.displayName || quiz.creator.username;
+    const creatorName = quiz.User.displayName || quiz.User.username;
 
     // Add sharer attribution if sharing someone else's quiz
     let attribution = creatorName;
@@ -112,6 +131,13 @@ export async function publishQuizToTumblr(
       tags: quiz.tags,
       quizUrl,
       creatorName: attribution,
+      questions: quiz.Question.map((q: any) => ({
+        text: q.questionText,
+        type: q.questionType,
+        options: q.QuestionOption?.map((opt: any) => ({
+          text: opt.optionText,
+        })),
+      })),
     };
 
     // Format for Tumblr
@@ -124,17 +150,32 @@ export async function publishQuizToTumblr(
     // Create Tumblr client
     const client = createAuthenticatedTumblrClient(accessToken, accessTokenSecret);
 
-    // Publish to Tumblr
+    // Debug logging
+    console.log('=== Tumblr Publish Debug ===');
+    console.log('Blog Name:', connection.tumblrBlogName);
+    console.log('Post Data:', JSON.stringify(postData, null, 2));
+    console.log('Share Content:', JSON.stringify(shareContent, null, 2));
+    console.log('===========================');
+
+    // Publish to Tumblr using modern NPF (Neue Post Format)
+    // This supports rich media, interactive polls, formatted text, and images
     const result = await client.createPost(connection.tumblrBlogName, postData);
 
+    // Debug: Log the result to see what Tumblr returns
+    console.log('=== Tumblr API Response ===');
+    console.log('Result:', JSON.stringify(result, null, 2));
+    console.log('===========================');
+
     // Store post in database
+    // Use id_string to avoid JavaScript number precision issues
+    const postId = result.id_string || result.id.toString();
     const post = await prisma.socialMediaPost.create({
       data: {
         quizId,
         connectionId,
         platform: 'TUMBLR',
-        externalPostId: result.id.toString(),
-        externalUrl: `https://${connection.tumblrBlogName}.tumblr.com/post/${result.id}`,
+        externalPostId: postId,
+        externalUrl: `https://${connection.tumblrBlogName}.tumblr.com/post/${postId}`,
         publishedAt: new Date(),
       },
     });
@@ -159,6 +200,13 @@ export async function publishQuizToTumblr(
     };
   } catch (error: any) {
     console.error('Tumblr publish error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data || error.response,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      stack: error.stack,
+    });
 
     return {
       success: false,
@@ -180,8 +228,8 @@ export async function deletePostFromTumblr(
     const post = await prisma.socialMediaPost.findUnique({
       where: { id: postId },
       include: {
-        connection: true,
-        quiz: true,
+        SocialMediaConnection: true,
+        Quiz: true,
       },
     });
 
@@ -190,7 +238,7 @@ export async function deletePostFromTumblr(
     }
 
     // Verify user owns the connection
-    if (post.connection.userId !== userId) {
+    if (post.SocialMediaConnection.userId !== userId) {
       throw new SocialMediaError(
         'You don\'t have permission to delete this post',
         'PERMISSION_DENIED',
@@ -199,18 +247,18 @@ export async function deletePostFromTumblr(
     }
 
     // Decrypt tokens
-    if (!post.connection.tumblrOAuthToken || !post.connection.tumblrOAuthSecret || !post.connection.tumblrBlogName) {
+    if (!post.SocialMediaConnection.tumblrOAuthToken || !post.SocialMediaConnection.tumblrOAuthSecret || !post.SocialMediaConnection.tumblrBlogName) {
       throw new Error('Invalid connection configuration');
     }
 
-    const accessToken = decryptToken(post.connection.tumblrOAuthToken);
-    const accessTokenSecret = decryptToken(post.connection.tumblrOAuthSecret);
+    const accessToken = decryptToken(post.SocialMediaConnection.tumblrOAuthToken);
+    const accessTokenSecret = decryptToken(post.SocialMediaConnection.tumblrOAuthSecret);
 
     // Create Tumblr client
     const client = createAuthenticatedTumblrClient(accessToken, accessTokenSecret);
 
     // Delete from Tumblr
-    await client.deletePost(post.connection.tumblrBlogName, post.externalPostId);
+    await client.deletePost(post.SocialMediaConnection.tumblrBlogName, post.externalPostId);
 
     // Delete from database
     await prisma.socialMediaPost.delete({
@@ -234,7 +282,7 @@ export async function syncTumblrPostMetrics(
     const post = await prisma.socialMediaPost.findUnique({
       where: { id: postId },
       include: {
-        connection: true,
+        SocialMediaConnection: true,
       },
     });
 
@@ -243,18 +291,18 @@ export async function syncTumblrPostMetrics(
     }
 
     // Decrypt tokens
-    if (!post.connection.tumblrOAuthToken || !post.connection.tumblrOAuthSecret || !post.connection.tumblrBlogName) {
+    if (!post.SocialMediaConnection.tumblrOAuthToken || !post.SocialMediaConnection.tumblrOAuthSecret || !post.SocialMediaConnection.tumblrBlogName) {
       throw new Error('Invalid connection configuration');
     }
 
-    const accessToken = decryptToken(post.connection.tumblrOAuthToken);
-    const accessTokenSecret = decryptToken(post.connection.tumblrOAuthSecret);
+    const accessToken = decryptToken(post.SocialMediaConnection.tumblrOAuthToken);
+    const accessTokenSecret = decryptToken(post.SocialMediaConnection.tumblrOAuthSecret);
 
     // Create Tumblr client
     const client = createAuthenticatedTumblrClient(accessToken, accessTokenSecret);
 
     // Fetch post info
-    const blogPosts = await client.blogPosts(post.connection.tumblrBlogName, {
+    const blogPosts = await client.blogPosts(post.SocialMediaConnection.tumblrBlogName, {
       id: post.externalPostId,
     });
 
@@ -294,7 +342,7 @@ export async function syncAllTumblrPosts(userId: string): Promise<void> {
         isActive: true,
       },
       include: {
-        publishedPosts: {
+        SocialMediaPost: {
           where: {
             platform: 'TUMBLR',
             // Only sync posts from last 30 days
@@ -308,7 +356,7 @@ export async function syncAllTumblrPosts(userId: string): Promise<void> {
 
     // Sync each post
     for (const connection of connections) {
-      for (const post of connection.publishedPosts) {
+      for (const post of connection.SocialMediaPost) {
         try {
           await syncTumblrPostMetrics(post.id);
         } catch (error) {

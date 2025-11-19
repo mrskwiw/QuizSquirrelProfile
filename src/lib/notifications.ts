@@ -178,12 +178,12 @@ export async function notifyCommentReply(
       where: { id: parentCommentId },
       select: {
         userId: true,
-        user: {
+        User: {
           select: {
             username: true,
           },
         },
-        quiz: {
+        Quiz: {
           select: {
             title: true,
           },
@@ -198,12 +198,12 @@ export async function notifyCommentReply(
     return await createNotification({
       userId: parentComment.userId,
       type: 'COMMENT_REPLY',
-      message: `${replyAuthorName} replied to your comment on "${parentComment.quiz.title}"`,
+      message: `${replyAuthorName} replied to your comment on "${parentComment.Quiz.title}"`,
       actorId: replyAuthorId,
       actorName: replyAuthorName,
       actorAvatar: replyAuthorAvatar || undefined,
       quizId,
-      quizTitle: parentComment.quiz.title,
+      quizTitle: parentComment.Quiz.title,
       commentText: replyText,
       actionUrl: `/quiz/${quizId}`,
     })

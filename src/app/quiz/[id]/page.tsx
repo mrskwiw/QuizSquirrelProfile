@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { QuizHeader } from '@/components/quiz/QuizHeader'
 import { StarRating } from '@/components/quiz/StarRating'
 import { Spinner } from '@/components/ui/Spinner'
+import { SocialShareSection } from '@/components/social/SocialShareSection'
 
 // Dynamic imports for heavy components (20-30% bundle size reduction)
 const QuizTaker = dynamic(
@@ -131,6 +132,15 @@ export default async function QuizPage({ params }: QuizPageProps) {
         {/* Rating Section */}
         <div className="mt-6">
           <StarRating quizId={quiz.id} />
+        </div>
+
+        {/* Social Share Section */}
+        <div className="mt-6">
+          <SocialShareSection
+            quizId={quiz.id}
+            quizTitle={quiz.title}
+            showMetrics={true}
+          />
         </div>
 
         {/* Comments Section */}

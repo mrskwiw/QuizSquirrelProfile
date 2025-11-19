@@ -22,7 +22,7 @@ export default async function MessageThreadPage({
   }
 
   // Find the other user in the conversation
-  const otherParticipant = conversation.participants.find((p) => p.userId !== user.id)
+  const otherParticipant = conversation.ConversationParticipant.find((p: any) => p.userId !== user.id)
 
   if (!otherParticipant) {
     redirect('/messages')
@@ -38,7 +38,7 @@ export default async function MessageThreadPage({
           <MessageThread
             conversationId={conversation.id}
             currentUserId={user.id}
-            otherUser={otherParticipant.user}
+            otherUser={otherParticipant.User}
           />
         </div>
       </div>

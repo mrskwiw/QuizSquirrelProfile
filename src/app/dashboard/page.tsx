@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { LikeButton } from '@/components/quiz/LikeButton'
 import { Header } from '@/components/layout/Header'
+import { SocialConnectionsSection } from '@/components/social/SocialConnectionsSection'
 
 interface Quiz {
   id: string
@@ -172,6 +173,11 @@ export default function DashboardPage() {
               <div className="text-sm text-gray-600">Total Likes</div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Social Media Connections */}
+        <div className="mb-8">
+          <SocialConnectionsSection compact />
         </div>
 
         {/* Filter Tabs */}

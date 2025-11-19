@@ -29,7 +29,7 @@ export function createTumblrClient(credentials: TumblrOAuthCredentials): ITumblr
     clientConfig.token_secret = tokenSecret;
   }
 
-  return tumblr.createClient(clientConfig) as ITumblrClient;
+  return tumblr.createClient(clientConfig) as unknown as ITumblrClient;
 }
 
 /**

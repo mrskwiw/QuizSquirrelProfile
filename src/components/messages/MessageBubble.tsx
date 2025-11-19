@@ -59,8 +59,8 @@ export function MessageBubble({ message, isOwn, onEdit, onDelete, onReact, onRem
     if (!onReact || !onRemoveReaction) return
 
     // Check if user already reacted with this emoji
-    const existingReaction = message.reactions?.find(
-      r => r.emoji === emoji && r.userId === message.senderId
+    const existingReaction = message.MessageReaction?.find(
+      (r: any) => r.emoji === emoji && r.userId === message.senderId
     )
 
     try {
@@ -76,7 +76,7 @@ export function MessageBubble({ message, isOwn, onEdit, onDelete, onReact, onRem
   }
 
   // Group reactions by emoji
-  const reactionSummary = message.reactions?.reduce((acc, reaction) => {
+  const reactionSummary = message.MessageReaction?.reduce((acc: any, reaction: any) => {
     if (!acc[reaction.emoji]) {
       acc[reaction.emoji] = { count: 0, userIds: [] }
     }
@@ -91,7 +91,7 @@ export function MessageBubble({ message, isOwn, onEdit, onDelete, onReact, onRem
         {/* Sender name (only for received messages) */}
         {!isOwn && (
           <div className="text-xs text-gray-600 mb-1 px-1">
-            {message.sender.displayName}
+            {message.User.displayName}
           </div>
         )}
 
@@ -195,7 +195,7 @@ export function MessageBubble({ message, isOwn, onEdit, onDelete, onReact, onRem
           {/* Reactions display */}
           {reactionSummary && Object.keys(reactionSummary).length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
-              {Object.entries(reactionSummary).map(([emoji, data]) => (
+              {Object.entries(reactionSummary).map(([emoji, data]: [string, any]) => (
                 <button
                   key={emoji}
                   onClick={() => handleReaction(emoji)}
@@ -224,7 +224,7 @@ export function MessageBubble({ message, isOwn, onEdit, onDelete, onReact, onRem
           {isOwn && (
             <>
               <span>•</span>
-              {message.reads && message.reads.length > 0 ? (
+              {message.MessageRead && message.MessageRead.length > 0 ? (
                 <span className="text-blue-600 flex items-center gap-1">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>

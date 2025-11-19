@@ -14,49 +14,161 @@ export function generateQuizUrl(quizId: string): string {
 }
 
 /**
- * Format quiz content for Tumblr
- * Tumblr supports HTML in text posts
+ * Count Unicode code points correctly (NPF requirement)
+ * Standard emojis = 1 code point, complex emojis = multiple code points
+ */
+function getCodePointLength(text: string): number {
+  return [...text].length;
+}
+
+/**
+ * Format quiz content for Tumblr using NPF (Neue Post Format)
+ * Creates rich media posts with images, formatted text, and interactive polls
  */
 export function formatQuizForTumblr(content: QuizShareContent) {
-  const { title, description, coverImage, tags, quizUrl, creatorName } = content;
+  const { title, description, coverImage, tags, quizUrl, creatorName, questions } = content;
 
-  // Build HTML content
-  let body = `<h2>${escapeHtml(title)}</h2>\n\n`;
+  // Build content blocks array for NPF
+  const contentBlocks: any[] = [];
 
-  if (description) {
-    body += `<p>${escapeHtml(description)}</p>\n\n`;
+  // 1. Header with quiz title
+  const titleText = `🎯 ${title}`;
+  contentBlocks.push({
+    type: 'text',
+    text: titleText,
+    subtype: 'heading1',
+  });
+
+  // 2. Cover image if available
+  if (coverImage) {
+    contentBlocks.push({
+      type: 'image',
+      media: [
+        {
+          type: 'image/jpeg',
+          url: coverImage,
+        },
+      ],
+    });
   }
 
-  body += `<p><strong>Take the quiz:</strong> <a href="${quizUrl}">${quizUrl}</a></p>\n\n`;
-  body += `<p><em>Created by ${escapeHtml(creatorName)} on Quiz Squirrel</em></p>`;
+  // 3. Description if available
+  if (description) {
+    contentBlocks.push({
+      type: 'text',
+      text: description,
+    });
+  }
+
+  // 4. Question previews - show first question with clickable answers
+  if (questions && questions.length > 0) {
+    const firstQuestion = questions[0];
+    const questionText = `❓ ${firstQuestion.text}`;
+
+    contentBlocks.push({
+      type: 'text',
+      text: questionText,
+      subtype: 'heading2',
+    });
+
+    // Make answer options clickable
+    if (firstQuestion.options && firstQuestion.options.length > 0) {
+      firstQuestion.options.forEach((option) => {
+        const optionText = `→ ${option.text}`;
+        contentBlocks.push({
+          type: 'text',
+          text: optionText,
+          formatting: [
+            {
+              start: 0,
+              end: getCodePointLength(optionText),
+              type: 'link',
+              url: quizUrl,
+            },
+          ],
+        });
+      });
+
+      // Hint text
+      const hintText = '(Click any answer to start the quiz!)';
+      contentBlocks.push({
+        type: 'text',
+        text: hintText,
+        formatting: [
+          {
+            start: 0,
+            end: getCodePointLength(hintText),
+            type: 'italic',
+          },
+        ],
+      });
+    }
+
+    // More questions indicator
+    if (questions.length > 1) {
+      contentBlocks.push({
+        type: 'text',
+        text: `Plus ${questions.length - 1} more question${questions.length > 2 ? 's' : ''}...`,
+        subtype: 'heading2',
+      });
+    }
+  }
+
+  // 5. Call to action with link and bold
+  const ctaText = '👉 Take the full quiz and discover your results!';
+  const ctaLen = getCodePointLength(ctaText);
+  contentBlocks.push({
+    type: 'text',
+    text: ctaText,
+    formatting: [
+      {
+        start: 0,
+        end: ctaLen,
+        type: 'link',
+        url: quizUrl,
+      },
+      {
+        start: 0,
+        end: ctaLen,
+        type: 'bold',
+      },
+    ],
+  });
+
+  // Link card
+  contentBlocks.push({
+    type: 'link',
+    url: quizUrl,
+    title: '🎯 Start Quiz',
+    description: `Click here to take the full ${title} quiz on Quiz Squirrel`,
+  });
+
+  // 6. Attribution
+  const attrText = `✨ ${creatorName} on Quiz Squirrel`;
+  const attrLen = getCodePointLength(attrText);
+  contentBlocks.push({
+    type: 'text',
+    text: attrText,
+    formatting: [
+      {
+        start: 0,
+        end: attrLen,
+        type: 'italic',
+      },
+    ],
+  });
 
   // Tumblr tags (clean and lowercase)
-  const tumblrTags = [
-    ...tags.map(t => cleanTag(t)),
-    'quiz',
-    'personality quiz',
-    'quizsquirrel',
-    content.category.toLowerCase(),
-  ];
+  const tumblrTags = (tags || []).map(t => cleanTag(t));
+  tumblrTags.push('quiz', 'personality quiz', 'quizsquirrel', content.category.toLowerCase());
 
-  // Decide post type based on whether there's a cover image
-  if (coverImage) {
-    return {
-      type: 'photo',
-      data: coverImage, // Can be URL or file path
-      caption: body,
-      tags: tumblrTags.join(','),
-      state: 'published',
-    };
-  } else {
-    return {
-      type: 'text',
-      title: title,
-      body: body,
-      tags: tumblrTags.join(','),
-      state: 'published',
-    };
-  }
+  // NPF format for modern Tumblr API
+  return {
+    type: 'text' as const,
+    content: contentBlocks,
+    tags: tumblrTags.join(','),
+    state: 'published' as const,
+  };
 }
 
 /**

@@ -20,7 +20,7 @@ export async function getOrCreateConversation(
   const existingConversation = await prisma.conversation.findFirst({
     where: {
       type: 'direct',
-      participants: {
+      ConversationParticipant: {
         every: {
           userId: {
             in: [userId1, userId2],
@@ -29,9 +29,9 @@ export async function getOrCreateConversation(
       },
     },
     include: {
-      participants: {
+      ConversationParticipant: {
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -44,7 +44,7 @@ export async function getOrCreateConversation(
     },
   })
 
-  if (existingConversation && existingConversation.participants.length === 2) {
+  if (existingConversation && existingConversation.ConversationParticipant.length === 2) {
     return existingConversation as ConversationWithParticipants
   }
 
@@ -52,7 +52,7 @@ export async function getOrCreateConversation(
   const newConversation = await prisma.conversation.create({
     data: {
       type: 'direct',
-      participants: {
+      ConversationParticipant: {
         create: [
           {
             userId: userId1,
@@ -64,9 +64,9 @@ export async function getOrCreateConversation(
       },
     },
     include: {
-      participants: {
+      ConversationParticipant: {
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               username: true,
@@ -99,11 +99,11 @@ export async function getUserConversations(
         isArchived: false,
       },
       include: {
-        conversation: {
+        Conversation: {
           include: {
-            participants: {
+            ConversationParticipant: {
               include: {
-                user: {
+                User: {
                   select: {
                     id: true,
                     username: true,
@@ -113,7 +113,7 @@ export async function getUserConversations(
                 },
               },
             },
-            messages: {
+            Message: {
               orderBy: {
                 createdAt: 'desc',
               },
@@ -130,7 +130,7 @@ export async function getUserConversations(
         },
       },
       orderBy: {
-        conversation: {
+        Conversation: {
           lastMessageAt: 'desc',
         },
       },
@@ -156,19 +156,19 @@ export async function getUserConversations(
   )
 
   return participations.map((participation) => {
-    const conversation = participation.conversation
-    const otherParticipant = conversation.participants.find(
-      (p) => p.userId !== userId
+    const conversation = participation.Conversation
+    const otherParticipant = conversation.ConversationParticipant.find(
+      (p: any) => p.userId !== userId
     )!
 
-    const lastMessage = conversation.messages[0]
+    const lastMessage = conversation.Message[0]
     const unreadCount = unreadMap.get(conversation.id) || 0
 
     return {
       id: conversation.id,
       type: conversation.type,
       lastMessageAt: conversation.lastMessageAt,
-      otherUser: otherParticipant.user,
+      otherUser: otherParticipant.User,
       lastMessage: lastMessage
         ? {
             id: lastMessage.id,
@@ -194,16 +194,16 @@ export async function getConversation(
   const conversation = await prisma.conversation.findFirst({
     where: {
       id: conversationId,
-      participants: {
+      ConversationParticipant: {
         some: {
           userId,
         },
       },
     },
     include: {
-      participants: {
+      ConversationParticipant: {
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               username: true,

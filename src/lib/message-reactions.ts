@@ -30,9 +30,9 @@ export async function addReaction(
   const message = await prisma.message.findUnique({
     where: { id: messageId },
     include: {
-      conversation: {
+      Conversation: {
         include: {
-          participants: {
+          ConversationParticipant: {
             where: { userId },
           },
         },
@@ -44,7 +44,7 @@ export async function addReaction(
     throw new Error('Message not found')
   }
 
-  if (message.conversation.participants.length === 0) {
+  if (message.Conversation.ConversationParticipant.length === 0) {
     throw new Error('Not authorized to react to this message')
   }
 
@@ -70,7 +70,7 @@ export async function addReaction(
       emoji,
     },
     include: {
-      user: {
+      User: {
         select: {
           id: true,
           username: true,
@@ -123,7 +123,7 @@ export async function getMessageReactions(messageId: string) {
   const reactions = await prisma.messageReaction.findMany({
     where: { messageId },
     include: {
-      user: {
+      User: {
         select: {
           id: true,
           username: true,

@@ -34,16 +34,17 @@ export class PrismaRLSClient extends PrismaClient {
   ): Promise<T> {
     // Use interactive transaction to ensure SET LOCAL is scoped to this transaction
     return await this.$transaction(async (tx) => {
-      // Set session variable using parameterized query (SQL injection safe)
+      // Set session variable using raw SQL (UUID validation ensures safety)
       if (userId) {
         // Validate userId is a valid UUID to prevent injection
         if (!isValidUUID(userId)) {
           throw new Error('Invalid user ID format')
         }
-        await tx.$executeRaw`SET LOCAL app.current_user_id = ${userId}`
+        // Use $executeRawUnsafe since SET LOCAL doesn't support parameterized queries
+        await tx.$executeRawUnsafe(`SET LOCAL app.current_user_id = '${userId}'`)
       } else {
         // For anonymous users, set to empty string (NULL causes issues with current_setting)
-        await tx.$executeRaw`SET LOCAL app.current_user_id = ''`
+        await tx.$executeRawUnsafe(`SET LOCAL app.current_user_id = ''`)
       }
 
       // Execute callback with transaction client

@@ -2,29 +2,29 @@ import type { Conversation, ConversationParticipant, Message, MessageReaction, M
 
 // Extended types with relations
 export type ConversationWithParticipants = Conversation & {
-  participants: (ConversationParticipant & {
-    user: {
+  ConversationParticipant: (ConversationParticipant & {
+    User: {
       id: string
       username: string
       displayName: string
       avatarUrl: string | null
     }
   })[]
-  messages?: MessageWithSender[]
+  Message?: MessageWithSender[]
   _count?: {
-    messages: number
+    Message: number
   }
 }
 
 export type MessageWithSender = Message & {
-  sender: {
+  User: {
     id: string
     username: string
     displayName: string
     avatarUrl: string | null
   }
-  reactions?: MessageReaction[]
-  reads?: MessageRead[]
+  MessageReaction?: MessageReaction[]
+  MessageRead?: MessageRead[]
 }
 
 export type ConversationListItem = {

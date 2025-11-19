@@ -54,7 +54,7 @@ export async function sendMessage(
       status: 'SENT',
     },
     include: {
-      sender: {
+      User: {
         select: {
           id: true,
           username: true,
@@ -62,8 +62,8 @@ export async function sendMessage(
           avatarUrl: true,
         },
       },
-      reactions: true,
-      reads: true,
+      MessageReaction: true,
+      MessageRead: true,
     },
   })
 
@@ -76,12 +76,12 @@ export async function sendMessage(
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
-        participants: {
+        ConversationParticipant: {
           where: {
             userId: { not: senderId },
           },
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
               },
@@ -93,12 +93,12 @@ export async function sendMessage(
 
     if (conversation) {
       // Notify each participant (except sender)
-      for (const participant of conversation.participants) {
+      for (const participant of conversation.ConversationParticipant) {
         await notifyNewMessage(
           participant.userId,
           senderId,
-          message.sender.displayName,
-          message.sender.avatarUrl,
+          message.User.displayName,
+          message.User.avatarUrl,
           conversationId,
           sanitizedContent
         )
@@ -146,7 +146,7 @@ export async function getMessages(
   const messages = await prisma.message.findMany({
     where,
     include: {
-      sender: {
+      User: {
         select: {
           id: true,
           username: true,
@@ -154,8 +154,8 @@ export async function getMessages(
           avatarUrl: true,
         },
       },
-      reactions: true,
-      reads: true,
+      MessageReaction: true,
+      MessageRead: true,
     },
     orderBy: {
       createdAt: 'desc',
@@ -216,7 +216,7 @@ export async function editMessage(
       updatedAt: new Date(),
     },
     include: {
-      sender: {
+      User: {
         select: {
           id: true,
           username: true,
@@ -224,8 +224,8 @@ export async function editMessage(
           avatarUrl: true,
         },
       },
-      reactions: true,
-      reads: true,
+      MessageReaction: true,
+      MessageRead: true,
     },
   })
 
@@ -312,8 +312,8 @@ export async function getNewMessages(
   // Single query with direct join - no need to fetch conversations first
   const messages = await prisma.message.findMany({
     where: {
-      conversation: {
-        participants: {
+      Conversation: {
+        ConversationParticipant: {
           some: {
             userId,
           },
@@ -327,7 +327,7 @@ export async function getNewMessages(
       },
     },
     include: {
-      sender: {
+      User: {
         select: {
           id: true,
           username: true,
@@ -335,8 +335,8 @@ export async function getNewMessages(
           avatarUrl: true,
         },
       },
-      reactions: true,
-      reads: true,
+      MessageReaction: true,
+      MessageRead: true,
     },
     orderBy: {
       createdAt: 'asc',
