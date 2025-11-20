@@ -98,6 +98,9 @@ model Community {
 
   @@index([createdAt])
   @@index([creatorId])
+  @@index([name])
+  @@index([isPublic])
+  @@index([isPublic, createdAt])
 }
 
 model CommunityMember {

@@ -155,3 +155,53 @@ export function validateQuizAnswers(
 
   return { isValid: true }
 }
+
+/**
+ * Community name validation
+ * - 3-50 characters
+ * - Letters, numbers, spaces, and basic punctuation
+ * - No leading/trailing spaces
+ */
+export function validateCommunityName(name: string): { isValid: boolean; error?: string } {
+  if (!name) {
+    return { isValid: false, error: 'Community name is required' }
+  }
+
+  const trimmedName = name.trim()
+
+  if (trimmedName !== name) {
+    return { isValid: false, error: 'Community name cannot have leading or trailing spaces' }
+  }
+
+  if (trimmedName.length < 3) {
+    return { isValid: false, error: 'Community name must be at least 3 characters long' }
+  }
+
+  if (trimmedName.length > 50) {
+    return { isValid: false, error: 'Community name must be no more than 50 characters' }
+  }
+
+  // Allow letters, numbers, spaces, and basic punctuation
+  if (!/^[a-zA-Z0-9\s\-_&!?.,']+$/.test(trimmedName)) {
+    return { isValid: false, error: 'Community name contains invalid characters' }
+  }
+
+  return { isValid: true }
+}
+
+/**
+ * Community description validation
+ * - Maximum 500 characters
+ * - Optional field
+ */
+export function validateCommunityDescription(description: string | null | undefined): { isValid: boolean; error?: string } {
+  if (!description) {
+    return { isValid: true } // Description is optional
+  }
+
+  if (description.length > 500) {
+    return { isValid: false, error: 'Community description must be no more than 500 characters' }
+  }
+
+  return { isValid: true }
+}
