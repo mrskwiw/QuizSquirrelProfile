@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { CONFIG } from '@/lib/config'
 import bcrypt from 'bcryptjs'
 import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
+import { logAuthAttempt } from '@/lib/security-logger'
 
-// Ensure JWT_SECRET is set - fail fast if missing
-if (!process.env.JWT_SECRET) {
-  throw new Error('CRITICAL: JWT_SECRET environment variable is not set. Application cannot start.')
-}
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET)
+// JWT secret loaded from centralized config (validates on startup)
+const JWT_SECRET = CONFIG.JWT_SECRET
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') ||
+             request.headers.get('x-real-ip') ||
+             'unknown'
+  const userAgent = request.headers.get('user-agent') || undefined
+
   try {
     const body = await request.json()
     const { email, password } = body
@@ -29,6 +32,15 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
+      // Log failed login - user not found
+      await logAuthAttempt({
+        username: email,
+        ip,
+        userAgent,
+        success: false,
+        reason: 'user_not_found'
+      })
+
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -39,6 +51,16 @@ export async function POST(request: NextRequest) {
     const isValidPassword = await bcrypt.compare(password, user.password)
 
     if (!isValidPassword) {
+      // Log failed login - invalid password
+      await logAuthAttempt({
+        userId: user.id,
+        username: user.username,
+        ip,
+        userAgent,
+        success: false,
+        reason: 'invalid_password'
+      })
+
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -65,6 +87,15 @@ export async function POST(request: NextRequest) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
+    })
+
+    // Log successful login
+    await logAuthAttempt({
+      userId: user.id,
+      username: user.username,
+      ip,
+      userAgent,
+      success: true
     })
 
     return NextResponse.json({

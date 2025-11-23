@@ -1,44 +1,12 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
-
-// Rate limiting store (in-memory - for production use Redis or Vercel KV)
-const rateLimit = new Map<string, { count: number; resetTime: number }>()
-
-// Rate limit configurations
-const RATE_LIMITS = {
-  auth: { requests: 5, windowMs: 15 * 60 * 1000 }, // 5 requests per 15 minutes
-  search: { requests: 30, windowMs: 60 * 1000 }, // 30 requests per minute
-  general: { requests: 100, windowMs: 60 * 1000 }, // 100 requests per minute
-}
+import { CONFIG } from './lib/config'
+import { checkRateLimit, RATE_LIMITS, type RateLimitConfig } from './lib/rate-limit'
+import { logRateLimitViolation } from './lib/security-logger'
 
 function getRateLimitKey(ip: string, path: string): string {
   return `${ip}:${path}`
-}
-
-function checkRateLimit(
-  key: string,
-  limit: { requests: number; windowMs: number }
-): { allowed: boolean; remaining: number; resetTime: number } {
-  const now = Date.now()
-  const record = rateLimit.get(key)
-
-  // No record or window expired - create new record
-  if (!record || now > record.resetTime) {
-    const resetTime = now + limit.windowMs
-    rateLimit.set(key, { count: 1, resetTime })
-    return { allowed: true, remaining: limit.requests - 1, resetTime }
-  }
-
-  // Within window - check if limit exceeded
-  if (record.count >= limit.requests) {
-    return { allowed: false, remaining: 0, resetTime: record.resetTime }
-  }
-
-  // Increment count
-  record.count++
-  rateLimit.set(key, record)
-  return { allowed: true, remaining: limit.requests - record.count, resetTime: record.resetTime }
 }
 
 async function checkAdminAuth(request: NextRequest): Promise<{ isAdmin: boolean; userId?: string }> {
@@ -48,8 +16,7 @@ async function checkAdminAuth(request: NextRequest): Promise<{ isAdmin: boolean;
       return { isAdmin: false }
     }
 
-    const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '')
-    const verified = await jwtVerify(token.value, JWT_SECRET)
+    const verified = await jwtVerify(token.value, CONFIG.JWT_SECRET)
     const payload = verified.payload as { userId: string; role?: string }
 
     const isAdmin = payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN'
@@ -78,7 +45,7 @@ export async function middleware(request: NextRequest) {
              'unknown'
 
   // Determine rate limit based on path
-  let limitConfig = RATE_LIMITS.general
+  let limitConfig: RateLimitConfig = RATE_LIMITS.general
   let rateLimitPath = path
 
   if (path.startsWith('/api/auth/login') || path.startsWith('/api/auth/register')) {
@@ -88,9 +55,20 @@ export async function middleware(request: NextRequest) {
     limitConfig = RATE_LIMITS.search
   }
 
-  // Check rate limit
+  // Check rate limit (distributed via Redis)
   const key = getRateLimitKey(ip, rateLimitPath)
-  const { allowed, remaining, resetTime } = checkRateLimit(key, limitConfig)
+  const rateLimitResult = await checkRateLimit(key, limitConfig)
+  const { allowed, remaining, resetTime, limit } = rateLimitResult
+
+  // Log rate limit violations
+  if (!allowed) {
+    await logRateLimitViolation({
+      ip,
+      path: rateLimitPath,
+      limit,
+      remaining
+    })
+  }
 
   // Create response
   const response = allowed
@@ -101,7 +79,7 @@ export async function middleware(request: NextRequest) {
       )
 
   // Add rate limit headers
-  response.headers.set('X-RateLimit-Limit', limitConfig.requests.toString())
+  response.headers.set('X-RateLimit-Limit', limit.toString())
   response.headers.set('X-RateLimit-Remaining', remaining.toString())
   response.headers.set('X-RateLimit-Reset', new Date(resetTime).toISOString())
 
