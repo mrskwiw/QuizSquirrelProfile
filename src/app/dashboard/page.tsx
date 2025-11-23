@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/Badge'
 import { LikeButton } from '@/components/quiz/LikeButton'
 import { Header } from '@/components/layout/Header'
 import { SocialConnectionsSection } from '@/components/social/SocialConnectionsSection'
+import { TumblrShare } from '@/components/social/TumblrShare'
+import { FacebookShare } from '@/components/social/FacebookShare'
 
 interface Quiz {
   id: string
@@ -388,6 +390,24 @@ export default function DashboardPage() {
                         🗑️
                       </Button>
                     </div>
+
+                    {/* Quick Share to Social Media - Only for Published Quizzes */}
+                    {quiz.status === 'PUBLISHED' && (
+                      <div className="mt-2 space-y-2">
+                        <TumblrShare
+                          quizId={quiz.id}
+                          variant="outline"
+                          size="sm"
+                          showSuccessMessage={true}
+                        />
+                        <FacebookShare
+                          quizId={quiz.id}
+                          variant="outline"
+                          size="sm"
+                          showSuccessMessage={true}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Created Date */}

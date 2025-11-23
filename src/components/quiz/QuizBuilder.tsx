@@ -17,6 +17,7 @@ export interface QuizData {
   coverImage?: string
   category: string
   tags: string[]
+  communityId?: string
   questions: Question[]
   settings: QuizSettings
 }
@@ -196,6 +197,7 @@ export function QuizBuilder() {
           coverImage: quizData.coverImage,
           category: quizData.category,
           tags: quizData.tags,
+          communityId: quizData.communityId,
           questions: quizData.questions.map(q => ({
             questionText: q.questionText,
             questionType: q.questionType,

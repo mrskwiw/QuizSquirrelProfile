@@ -5,6 +5,7 @@
 
 import tumblr from 'tumblr.js';
 import type { TumblrOAuthCredentials, TumblrClient as ITumblrClient } from './types';
+import { CONFIG } from '../../config';
 
 /**
  * Create a Tumblr API client with OAuth credentials
@@ -37,16 +38,13 @@ export function createTumblrClient(credentials: TumblrOAuthCredentials): ITumblr
  * Useful for public API calls that don't require user authentication
  */
 export function createPublicTumblrClient(): ITumblrClient {
-  const consumerKey = process.env.TUMBLR_CONSUMER_KEY;
-  const consumerSecret = process.env.TUMBLR_CONSUMER_SECRET;
-
-  if (!consumerKey || !consumerSecret) {
+  if (!CONFIG.TUMBLR.isConfigured()) {
     throw new Error('Tumblr API credentials not configured');
   }
 
   return createTumblrClient({
-    consumerKey,
-    consumerSecret,
+    consumerKey: CONFIG.TUMBLR.CONSUMER_KEY!,
+    consumerSecret: CONFIG.TUMBLR.CONSUMER_SECRET!,
   });
 }
 
@@ -59,10 +57,7 @@ export function createAuthenticatedTumblrClient(
   token: string,
   tokenSecret: string
 ): ITumblrClient {
-  const consumerKey = process.env.TUMBLR_CONSUMER_KEY;
-  const consumerSecret = process.env.TUMBLR_CONSUMER_SECRET;
-
-  if (!consumerKey || !consumerSecret) {
+  if (!CONFIG.TUMBLR.isConfigured()) {
     throw new Error('Tumblr API credentials not configured');
   }
 
@@ -71,8 +66,8 @@ export function createAuthenticatedTumblrClient(
   }
 
   return createTumblrClient({
-    consumerKey,
-    consumerSecret,
+    consumerKey: CONFIG.TUMBLR.CONSUMER_KEY!,
+    consumerSecret: CONFIG.TUMBLR.CONSUMER_SECRET!,
     token,
     tokenSecret,
   });

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { TumblrConnect } from './TumblrConnect'
+import { FacebookConnect } from './FacebookConnect'
 import { ConnectionCard, Connection } from './ConnectionCard'
 
 export interface SocialConnectionsSectionProps {
@@ -86,19 +87,49 @@ export function SocialConnectionsSection({
               <p className="text-sm text-gray-600">
                 Connect your social media accounts to share quizzes.
               </p>
-              <TumblrConnect
-                variant="primary"
-                size="sm"
-                onSuccess={handleConnectSuccess}
-              />
+              <div className="flex flex-col gap-2">
+                <TumblrConnect
+                  variant="primary"
+                  size="sm"
+                  onSuccess={handleConnectSuccess}
+                />
+                <FacebookConnect
+                  variant="primary"
+                  size="sm"
+                  onSuccess={handleConnectSuccess}
+                />
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">
-                  {connections.length} account{connections.length !== 1 ? 's' : ''}{' '}
-                  connected
-                </span>
+              {/* Platform Status Overview */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700 font-medium">Tumblr</span>
+                  {connections.some((c) => c.platform === 'TUMBLR' && c.isActive) ? (
+                    <span className="flex items-center text-green-600">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">Not connected</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700 font-medium">Facebook</span>
+                  {connections.some((c) => c.platform === 'FACEBOOK' && c.isActive) ? (
+                    <span className="flex items-center text-green-600">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">Not connected</span>
+                  )}
+                </div>
               </div>
               {isExpanded && (
                 <div className="space-y-3">
@@ -110,11 +141,18 @@ export function SocialConnectionsSection({
                       onRefresh={fetchConnections}
                     />
                   ))}
-                  <TumblrConnect
-                    variant="outline"
-                    size="sm"
-                    onSuccess={handleConnectSuccess}
-                  />
+                  <div className="flex flex-col gap-2">
+                    <TumblrConnect
+                      variant="outline"
+                      size="sm"
+                      onSuccess={handleConnectSuccess}
+                    />
+                    <FacebookConnect
+                      variant="outline"
+                      size="sm"
+                      onSuccess={handleConnectSuccess}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -149,7 +187,10 @@ export function SocialConnectionsSection({
                 variant="primary"
                 onSuccess={handleConnectSuccess}
               />
-              {/* Facebook connect button can be added here later */}
+              <FacebookConnect
+                variant="primary"
+                onSuccess={handleConnectSuccess}
+              />
             </div>
           </div>
         ) : (
@@ -173,7 +214,10 @@ export function SocialConnectionsSection({
                   variant="outline"
                   onSuccess={handleConnectSuccess}
                 />
-                {/* Facebook connect button can be added here later */}
+                <FacebookConnect
+                  variant="outline"
+                  onSuccess={handleConnectSuccess}
+                />
               </div>
             </div>
           </div>

@@ -1,14 +1,11 @@
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from './prisma'
+import { CONFIG } from './config'
 import type { User } from '@prisma/client'
 
-// Ensure JWT_SECRET is set - fail fast if missing
-if (!process.env.JWT_SECRET) {
-  throw new Error('CRITICAL: JWT_SECRET environment variable is not set. Application cannot start.')
-}
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET)
+// JWT secret loaded from centralized config (validates on startup)
+const JWT_SECRET = CONFIG.JWT_SECRET
 
 // In-memory user cache with TTL (5 minutes)
 interface UserCacheEntry {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 
@@ -11,8 +11,15 @@ interface QuizInfoFormProps {
     category: string
     tags: string[]
     coverImage?: string
+    communityId?: string
   }
   onChange: (data: Partial<QuizInfoFormProps['data']>) => void
+}
+
+interface Community {
+  id: string
+  name: string
+  isMember: boolean
 }
 
 const CATEGORIES = [
@@ -35,6 +42,32 @@ const CATEGORIES = [
 export function QuizInfoForm({ data, onChange }: QuizInfoFormProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [communities, setCommunities] = useState<Community[]>([])
+  const [isLoadingCommunities, setIsLoadingCommunities] = useState(false)
+
+  // Fetch user's communities on mount
+  useEffect(() => {
+    fetchUserCommunities()
+  }, [])
+
+  const fetchUserCommunities = async () => {
+    setIsLoadingCommunities(true)
+    try {
+      const response = await fetch('/api/communities?limit=100')
+      if (response.ok) {
+        const result = await response.json()
+        // Filter to only communities where user is a member
+        const memberCommunities = result.communities.filter(
+          (c: Community) => c.isMember
+        )
+        setCommunities(memberCommunities)
+      }
+    } catch (error) {
+      console.error('Failed to fetch communities:', error)
+    } finally {
+      setIsLoadingCommunities(false)
+    }
+  }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -130,6 +163,31 @@ export function QuizInfoForm({ data, onChange }: QuizInfoFormProps) {
           ))}
         </select>
       </div>
+
+      {/* Community Selector */}
+      {communities.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Post to Community (Optional)
+          </label>
+          <select
+            value={data.communityId || ''}
+            onChange={(e) => onChange({ communityId: e.target.value || undefined })}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            disabled={isLoadingCommunities}
+          >
+            <option value="">None - Post to personal profile</option>
+            {communities.map((community) => (
+              <option key={community.id} value={community.id}>
+                {community.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-sm text-gray-500">
+            Share your quiz with a community you belong to
+          </p>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">

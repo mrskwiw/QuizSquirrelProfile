@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { MemberList } from '@/components/community/MemberList'
+import { CommunityActivityFeed } from '@/components/community/CommunityActivityFeed'
+import { InvitationList } from '@/components/community/InvitationList'
+import { SendInvitationModal } from '@/components/community/SendInvitationModal'
 
 interface Member {
   id: string
@@ -42,7 +46,7 @@ export default function CommunityDetailPage() {
   const [community, setCommunity] = useState<any>(null)
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [members, setMembers] = useState<Member[]>([])
-  const [activeTab, setActiveTab] = useState<'feed' | 'members'>('feed')
+  const [activeTab, setActiveTab] = useState<'feed' | 'members' | 'invitations' | 'activity'>('feed')
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false)
   const [error, setError] = useState('')
@@ -51,6 +55,7 @@ export default function CommunityDetailPage() {
   const [isLeaving, setIsLeaving] = useState(false)
   const [quizPage, setQuizPage] = useState(1)
   const [hasMoreQuizzes, setHasMoreQuizzes] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
 
   useEffect(() => {
     fetchCurrentUser()
@@ -305,6 +310,15 @@ export default function CommunityDetailPage() {
             </div>
 
             <div className="flex space-x-2">
+              {canManage && community.isMember && (
+                <button
+                  onClick={() => setShowInviteModal(true)}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Invite Members
+                </button>
+              )}
+
               {currentUser && !community.isMember && community.isPublic && (
                 <button
                   onClick={handleJoin}
@@ -354,6 +368,28 @@ export default function CommunityDetailPage() {
                     }`}
                   >
                     Members ({community.memberCount})
+                  </button>
+                  {canManage && (
+                    <button
+                      onClick={() => setActiveTab('invitations')}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                        activeTab === 'invitations'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Invitations
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setActiveTab('activity')}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'activity'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Activity
                   </button>
                 </nav>
               </div>
@@ -448,43 +484,50 @@ export default function CommunityDetailPage() {
 
                 {/* Members Tab */}
                 {activeTab === 'members' && (
-                  <div className="space-y-3">
-                    {members.map((member) => (
-                      <Link
-                        key={member.id}
-                        href={`/profile/${member.username}`}
-                        className="flex items-center space-x-3 hover:bg-gray-50 p-3 rounded-lg transition-colors"
-                      >
-                        <div className="relative w-12 h-12 rounded-full bg-gray-200 flex-shrink-0">
-                          {member.avatarUrl ? (
-                            <Image
-                              src={member.avatarUrl}
-                              alt={member.displayName}
-                              fill
-                              className="rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-500 font-semibold text-lg">
-                              {member.displayName[0].toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base font-medium text-gray-900 truncate">
-                            {member.displayName}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {member.communityRole === 'OWNER' && '👑 Owner'}
-                            {member.communityRole === 'MODERATOR' && '🛡️ Moderator'}
-                            {member.communityRole === 'MEMBER' && 'Member'}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+                  <MemberList
+                    communityId={communityId}
+                    currentUserRole={community.userRole}
+                    currentUserId={currentUser?.id}
+                    onMembersChange={async () => {
+                      // Refresh community data
+                      const res = await fetch(`/api/communities/${communityId}`)
+                      const data = await res.json()
+                      setCommunity(data.community)
+                      setMembers(data.members || [])
+                    }}
+                  />
+                )}
+
+                {/* Invitations Tab */}
+                {activeTab === 'invitations' && canManage && (
+                  <InvitationList
+                    communityId={communityId}
+                    variant="community"
+                  />
+                )}
+
+                {/* Activity Tab */}
+                {activeTab === 'activity' && (
+                  <CommunityActivityFeed
+                    communityId={communityId}
+                  />
                 )}
               </div>
             </div>
+
+            {/* Send Invitation Modal */}
+            <SendInvitationModal
+              isOpen={showInviteModal}
+              onClose={() => setShowInviteModal(false)}
+              communityId={communityId}
+              communityName={community.name}
+              onSuccess={() => {
+                // Refresh invitations if on invitations tab
+                if (activeTab === 'invitations') {
+                  // InvitationList component will auto-refresh via its own logic
+                }
+              }}
+            />
           </>
         ) : (
           /* Non-member view */

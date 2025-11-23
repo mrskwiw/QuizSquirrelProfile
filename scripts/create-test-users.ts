@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { randomUUID } from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -7,18 +8,23 @@ async function createTestUsers() {
   try {
     console.log('Creating test users...')
 
+    const now = new Date()
     const users = [
       {
+        id: randomUUID(),
         email: 'alice@test.com',
         username: 'alice',
         displayName: 'Alice Test',
         password: await bcrypt.hash('password123', 10),
+        updatedAt: now,
       },
       {
+        id: randomUUID(),
         email: 'bob@test.com',
         username: 'bob',
         displayName: 'Bob Test',
         password: await bcrypt.hash('password123', 10),
+        updatedAt: now,
       },
     ]
 

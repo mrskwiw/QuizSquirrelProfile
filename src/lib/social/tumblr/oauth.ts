@@ -11,6 +11,7 @@
 
 import crypto from 'crypto';
 import { SocialMediaError } from '../types';
+import { CONFIG } from '../../config';
 
 // OAuth endpoints
 const TUMBLR_REQUEST_TOKEN_URL = 'https://www.tumblr.com/oauth/request_token';
@@ -81,16 +82,16 @@ export async function requestTumblrToken(callbackUrl: string): Promise<{
   oauthTokenSecret: string;
   oauthCallbackConfirmed: string;
 }> {
-  const consumerKey = process.env.TUMBLR_CONSUMER_KEY;
-  const consumerSecret = process.env.TUMBLR_CONSUMER_SECRET;
-
-  if (!consumerKey || !consumerSecret) {
+  if (!CONFIG.TUMBLR.isConfigured()) {
     throw new SocialMediaError(
       'Tumblr API credentials not configured',
       'INVALID_CREDENTIALS',
       'TUMBLR'
     );
   }
+
+  const consumerKey = CONFIG.TUMBLR.CONSUMER_KEY!;
+  const consumerSecret = CONFIG.TUMBLR.CONSUMER_SECRET!;
 
   // OAuth parameters
   const oauthParams: Record<string, string> = {
@@ -172,16 +173,16 @@ export async function exchangeTumblrToken(
   accessToken: string;
   accessTokenSecret: string;
 }> {
-  const consumerKey = process.env.TUMBLR_CONSUMER_KEY;
-  const consumerSecret = process.env.TUMBLR_CONSUMER_SECRET;
-
-  if (!consumerKey || !consumerSecret) {
+  if (!CONFIG.TUMBLR.isConfigured()) {
     throw new SocialMediaError(
       'Tumblr API credentials not configured',
       'INVALID_CREDENTIALS',
       'TUMBLR'
     );
   }
+
+  const consumerKey = CONFIG.TUMBLR.CONSUMER_KEY!;
+  const consumerSecret = CONFIG.TUMBLR.CONSUMER_SECRET!;
 
   // OAuth parameters
   const oauthParams: Record<string, string> = {

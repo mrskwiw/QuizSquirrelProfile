@@ -23,6 +23,7 @@ interface CreateQuizRequest {
   coverImage?: string
   category: string
   tags: string[]
+  communityId?: string
   questions: Question[]
   settings: {
     randomizeQuestions: boolean
@@ -88,6 +89,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate community membership if posting to a community
+    if (body.communityId) {
+      console.log('🏘️ API: Validating community membership...')
+      const { prisma } = await import('@/lib/prisma')
+
+      // Check if community exists
+      const community = await prisma.community.findUnique({
+        where: { id: body.communityId }
+      })
+
+      if (!community) {
+        return NextResponse.json(
+          { error: 'Community not found' },
+          { status: 404 }
+        )
+      }
+
+      // Check if user is a member of the community
+      const membership = await prisma.communityMember.findUnique({
+        where: {
+          userId_communityId: {
+            userId: user.id,
+            communityId: body.communityId
+          }
+        }
+      })
+
+      if (!membership) {
+        return NextResponse.json(
+          { error: 'You must be a member of this community to post quizzes' },
+          { status: 403 }
+        )
+      }
+
+      console.log('✅ API: User is a valid member of community')
+    }
+
     // Always save the quiz first (as draft if publishing but limit reached)
     // This preserves the user's work and enables upgrade flow
     let finalStatus: 'DRAFT' | 'PUBLISHED' = body.isDraft ? 'DRAFT' : 'PUBLISHED'
@@ -116,6 +154,7 @@ export async function POST(request: NextRequest) {
         coverImage: body.coverImage ? sanitizeInput(body.coverImage) : undefined,
         category: sanitizeInput(body.category),
         tags: body.tags?.map((tag: string) => sanitizeInput(tag)) || [],
+        communityId: body.communityId || null,
         status: finalStatus,
         creatorId: user.id,
         settings: {
